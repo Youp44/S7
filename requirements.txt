@@ -1,0 +1,10 @@
+# Versies zijn vastgezet omdat liionpack 0.4.0 niet werkt met nieuwere PyBaMM-versies.
+# casadi moet exact 3.6.7 zijn: PyBaMM 24.11.2 is daarmee gebouwd (anders 'DeSerialization ... version 8' fout).
+pybamm==24.11.2
+casadi==3.6.7
+liionpack==0.4.0
+numpy<2
+pandas<3
+matplotlib
+jupyter
+ipykernel
