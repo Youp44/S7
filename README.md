@@ -20,12 +20,14 @@ Elk bestand doet één ding. Het notebook roept alles aan.
 | Bestand | Functie |
 |---|---|
 | `config.py` | Alle aannames en instellingen op één plek: pakket, dagcyclus, laden, degradatie- en pakketsimulatie. |
+| `scenarios.py` | Routes en ePTO-gebruik als bouwstenen, gecombineerd tot scenario's (route x ePTO-variant). |
 | `load_profiles.py` | Bouwt het vermogensprofiel van één werkdag, met en zonder ePTO. |
 | `battery_model.py` | Het PyBaMM-celmodel met degradatie (SEI-groei, temperatuur, optioneel lithium plating). |
 | `degradation_sim.py` | Simuleert meerdere werkdagen (rijden, nachtladen, rust) en leest het capaciteitsverlies uit. |
 | `pack_sim.py` | Liionpack-simulatie van een klein deel van het pakket met onderling verschillende cellen. |
 | `analysis.py` | Vergelijkingstabel, grafieken en een grove extrapolatie naar 5 jaar. |
 | `run_analysis.ipynb` | Notebook dat alle onderdelen aanroept, met uitleg per stap. |
+| `profile_io.py` | Optioneel: eigen of gemeten rijpatroon inlezen (CSV of lijst met stukjes). |
 | `requirements.txt` | Vastgezette pakketversies. |
 
 ## Hoe het model werkt
@@ -71,6 +73,31 @@ Uitvoer per dag: capaciteit, relatieve capaciteit, verlies aan cyclbaar lithium 
 ### 4. Pakketsimulatie (`pack_sim.py`)
 
 Liionpack bouwt een elektrisch schema van een klein stuk pakket (standaard 8 in serie x 4 parallel) met busbar- en contactweerstanden. Elke cel krijgt een iets andere interne weerstand (10% spreiding). Zo wordt zichtbaar hoe ongelijk de stroom over parallelle cellen verdeeld wordt. Cellen met meer stroom verouderen sneller.
+
+## Scenario's: routes en ePTO-gebruik (`scenarios.py`)
+
+Een scenario is een **route** (hoe de wagen rijdt) gecombineerd met een **ePTO-gebruik** (hoe de opbouw de accu belast).
+Beide staan als losse lijstjes in `scenarios.py`; de combinaties worden vanzelf gemaakt.
+
+| Route | Kenmerk |
+|---|---|
+| Route 1 (stad) | Korte stukjes rijden, veel stops, korte aanrijtijd |
+| Route 2 (buitengebied) | Minder stops, langere stukken rijden, lange aanrijtijd |
+
+| ePTO-gebruik | Betekenis |
+|---|---|
+| Zonder ePTO | Opbouw draait niet op de accu (basis voor de vergelijking) |
+| ePTO standaard | Lift 12 kW x 10 s, perskast 28 kW x 20 s per stop |
+| ePTO alleen lift | Alleen de lift op de accu; de pers draait op iets anders |
+| ePTO hoge piek | Perskast 56 kW x 10 s (zelfde energie als standaard, hogere piek) |
+| ePTO lage piek | Perskast 18 kW x 30 s (zelfde energie als standaard, lagere piek) |
+
+De varianten "hoge piek" en "lage piek" zijn bedoeld om het effect van **energie** te scheiden van het effect van **vermogenspieken**.
+Let op dat de degradatiesimulatie het profiel middelt naar `solver_dt_s` (standaard 30 s). Piekverschillen korter dan dat verdwijnen
+daardoor grotendeels. Zet `solver_dt_s` op 10 voor zo'n vergelijking (trager rekenen).
+
+Een nieuwe route of variant toevoegen = een regel toevoegen aan `ROUTES` of `EPTO_GEBRUIK`. In het notebook kies je met `ROUTES_AAN` en
+`EPTO_AAN` welk deel je draait. De ePTO moet in de stop passen (lift + pers korter dan `stop_segment_s`), anders geeft `load_profiles.py` een foutmelding.
 
 ## Installatie
 

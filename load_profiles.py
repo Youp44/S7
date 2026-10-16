@@ -46,6 +46,10 @@ def build_daily_power_profile(duty: DutyCycleSpec, with_epto: bool):
         if with_epto:
             n_lift = max(1, int(duty.epto_lift_s / dt))
             n_comp = max(1, int(duty.epto_compact_s / dt))
+            if n_lift + n_comp > n_stop:
+                raise ValueError(
+                    f"ePTO past niet in de stop: lift ({n_lift * dt} s) + pers ({n_comp * dt} s) is langer dan "
+                    f"de stop ({n_stop * dt} s). Verleng stop_segment_s of kort de ePTO-duur in.")
             stop[:n_lift] += duty.epto_lift_kw * 1000
             stop[n_lift:n_lift + n_comp] += duty.epto_compact_kw * 1000
         blocks.extend([drive, stop])
